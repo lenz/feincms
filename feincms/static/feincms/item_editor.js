@@ -17,6 +17,13 @@ if (!Array.prototype.indexOf) {
         Downcoder.map["ü"] = Downcoder.map["Ü"] = "ue";
     }
 
+    var copy_options = [];
+    $.getJSON("/api/json/pages/", function(data) {
+        $.each(data, function(key, val) {
+            copy_options.push('<option value="'+key+'">'+val+'</option>');
+        });
+    });
+
     function feincms_gettext(s) {
         // Unfortunately, we cannot use Django's jsi18n view for this
         // because it only sends translations from the package
@@ -97,6 +104,54 @@ if (!Array.prototype.indexOf) {
             });
             item_controls.append(move_control); // Add new one
         }
+
+        // Content copy control unit
+        var wrp = [];
+        wrp.push('<div class="item-control-unit page-copy-control"><select name="item-page-copy-select">');
+        wrp.push('<option disabled selected>Auf Seite kopieren</option>');
+        wrp.push(copy_options.join(""));
+        wrp.push('</select>');
+
+        var copy_control = $(wrp.join(""));
+        copy_control.find("select").change(function(){
+            var item = $(this).parents(".order-item");
+            var in_database = item.find(".delete-field").length;
+
+            if(in_database==0){ // remove on client-side only
+                alert("Nicht gespeicherter Content kann nicht verschoben werden?");
+            }
+            else{
+                var page_id = $(this).val().split('_')[1];
+                var content_id_input = item.find('input[id$="-id"]')[0]
+                var content_id = content_id_input.value;
+                var content_type = content_id_input.name.split("_")[0];
+                var copy_cmd = {
+                    type: content_type,
+                    id: content_id,
+                    dest: page_id,
+                };
+
+                $.ajax({
+                    url: '/api/json/content/copy/',
+                    type: 'POST',
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(copy_cmd, null, 2),
+                    dataType: 'text',
+                    success: function(result) {
+                        if (confirm("Content wurde erfolgreich verschoben. Möchten Sie ihn jetzt löschen?")) {
+                            set_item_field_value(item,"delete-field","checked");
+                            item.fadeOut(200, function() {
+                                var region_item = $("#"+REGION_MAP[ACTIVE_REGION]+"_body");
+                                if (region_item.children("div.order-machine").children(":visible").length == 0) {
+                                    region_item.children("div.empty-machine-msg").show();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+        item_controls.append(copy_control);
     }
 
 
