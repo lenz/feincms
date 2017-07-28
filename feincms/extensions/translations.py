@@ -24,6 +24,7 @@ from django.conf import settings as django_settings
 from django.db import models
 from django.http import HttpResponseRedirect
 from django.utils import translation
+from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from feincms import extensions, settings
@@ -166,6 +167,7 @@ class Extension(extensions.Extension):
             'translation_of',
             models.ForeignKey(
                 'self',
+                on_delete=models.CASCADE,
                 blank=True, null=True, verbose_name=_('translation of'),
                 related_name='translations',
                 limit_choices_to={'language': django_settings.LANGUAGES[0][0]},
@@ -291,9 +293,8 @@ class Extension(extensions.Extension):
                         )
                     )
 
-            return ' | '.join(links)
+            return mark_safe(' | '.join(links))
 
-        available_translations_admin.allow_tags = True
         available_translations_admin.short_description = _('translations')
         modeladmin.__class__.available_translations_admin =\
             available_translations_admin

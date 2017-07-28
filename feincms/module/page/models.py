@@ -141,6 +141,8 @@ class BasePageManager(ActiveAwareContentManagerMixin, TreeManager):
 # ------------------------------------------------------------------------
 class PageManager(BasePageManager):
     pass
+
+
 PageManager.add_to_active_filters(Q(active=True))
 
 
@@ -157,6 +159,7 @@ class BasePage(create_base_model(MPTTModel), ContentModelMixin):
         help_text=_('This is used to build the URL for this page'))
     parent = models.ForeignKey(
         'self', verbose_name=_('Parent'), blank=True,
+        on_delete=models.CASCADE,
         null=True, related_name='children')
     # Custom list_filter - see admin/filterspecs.py
     parent.parent_filter = True
@@ -367,6 +370,7 @@ class Page(BasePage):
         verbose_name_plural = _('pages')
         app_label = 'page'
         # not yet # permissions = (("edit_page", _("Can edit page metadata")),)
+
 
 Page.register_default_processors()
 

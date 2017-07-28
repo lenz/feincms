@@ -11,11 +11,13 @@ the page's manager to determine which entries are to be considered active.
 from __future__ import absolute_import, unicode_literals
 
 from datetime import datetime
+from pytz.exceptions import AmbiguousTimeError
 
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.cache import patch_response_headers
+from django.utils.html import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from feincms import extensions
@@ -41,7 +43,7 @@ def latest_children(self):
 
 
 # ------------------------------------------------------------------------
-def granular_now(n=None):
+def granular_now(n=None, default_tz=None):
     """
     A datetime.now look-alike that returns times rounded to a five minute
     boundary. This helps the backend database to optimize/reuse/cache its
@@ -51,12 +53,27 @@ def granular_now(n=None):
     """
     if n is None:
         n = timezone.now()
-    # WARNING/TODO: make_aware can raise a pytz NonExistentTimeError or
-    # AmbiguousTimeError if the resultant time is invalid in n.tzinfo
-    # -- see https://github.com/feincms/feincms/commit/5d0363df
-    return timezone.make_aware(
-        datetime(n.year, n.month, n.day, n.hour, (n.minute // 5) * 5),
-        n.tzinfo)
+    if default_tz is None:
+        default_tz = n.tzinfo
+
+    # Django 1.9:
+    # The correct way to resolve the AmbiguousTimeError every dst
+    # transition is... the is_dst parameter appeared with 1.9
+    # make_aware(some_datetime, get_current_timezone(), is_dst=True)
+
+    rounded_minute = (n.minute // 5) * 5
+    d = datetime(n.year, n.month, n.day, n.hour, rounded_minute)
+    try:
+        retval = timezone.make_aware(d, default_tz)
+    except AmbiguousTimeError:
+        try:
+            retval = timezone.make_aware(d, default_tz, is_dst=False)
+        except TypeError:  # Pre-Django 1.9
+            retval = timezone.make_aware(
+                datetime(n.year, n.month, n.day, n.hour + 1, rounded_minute),
+                default_tz)
+
+    return retval
 
 
 # ------------------------------------------------------------------------
@@ -117,11 +134,10 @@ class Extension(extensions.Extension):
 
     def handle_modeladmin(self, modeladmin):
         def datepublisher_admin(self, obj):
-            return '%s &ndash; %s' % (
+            return mark_safe('%s &ndash; %s' % (
                 format_date(obj.publication_date),
                 format_date(obj.publication_end_date, '&infin;'),
-            )
-        datepublisher_admin.allow_tags = True
+            ))
         datepublisher_admin.short_description = _('visible from - to')
 
         modeladmin.__class__.datepublisher_admin = datepublisher_admin

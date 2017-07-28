@@ -111,7 +111,7 @@ def ajax_editable_boolean_cell(item, attr, text='', override=None):
 
     a.insert(0, '<div id="wrap_%s_%d">' % (attr, item.pk))
     a.append('</div>')
-    return ''.join(a)
+    return mark_safe(''.join(a))
 
 
 # ------------------------------------------------------------------------
@@ -129,7 +129,6 @@ def ajax_editable_boolean(attr, short_description):
     """
     def _fn(self, item):
         return ajax_editable_boolean_cell(item, attr)
-    _fn.allow_tags = True
     _fn.short_description = short_description
     _fn.editable_boolean_field = attr
     return _fn
@@ -260,12 +259,16 @@ class TreeEditor(ExtensionModelAdmin):
         changeable_class = ''
         if not self.changeable(item):
             changeable_class = ' tree-item-not-editable'
+        tree_root_class = ''
+        if not item.parent:
+            tree_root_class = ' tree-root'
 
         r += (
-            '<span id="page_marker-%d" class="page_marker%s"'
+            '<span id="page_marker-%d" class="page_marker%s%s"'
             ' style="width: %dpx;">&nbsp;</span>&nbsp;') % (
             item.pk,
             changeable_class,
+            tree_root_class,
             14 + getattr(item, mptt_opts.level_attr) * 18)
 
 #        r += '<span tabindex="0">'
@@ -276,7 +279,6 @@ class TreeEditor(ExtensionModelAdmin):
 #        r += '</span>'
         return mark_safe(r)
     indented_short_title.short_description = _('title')
-    indented_short_title.allow_tags = True
 
     def _collect_editable_booleans(self):
         """
@@ -486,8 +488,7 @@ class TreeEditor(ExtensionModelAdmin):
         return []
 
     def actions_column(self, instance):
-        return ' '.join(self._actions_column(instance))
-    actions_column.allow_tags = True
+        return mark_safe(' '.join(self._actions_column(instance)))
     actions_column.short_description = _('actions')
 
     def delete_selected_tree(self, modeladmin, request, queryset):

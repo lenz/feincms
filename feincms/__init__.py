@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-VERSION = (1, 12, 1)
+VERSION = (1, 13, 1)
 __version__ = '.'.join(map(str, VERSION))
 
 
@@ -21,6 +21,7 @@ class LazySettings(object):
         self._load_settings()
         del self.__class__.__getattr__
         return self.__dict__[attr]
+
 
 settings = LazySettings()
 
@@ -58,7 +59,9 @@ def ensure_completely_loaded(force=False):
     # that relations defined after all content types registrations
     # don't miss out.
     import django
-    if django.get_version() < '1.8':
+    from distutils.version import LooseVersion
+
+    if LooseVersion(django.get_version()) < LooseVersion('1.8'):
 
         for model in apps.get_models():
             for cache_name in (

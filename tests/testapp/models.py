@@ -55,6 +55,7 @@ def get_admin_fields(form, *args, **kwargs):
         'custom_field': forms.CharField(),
     }
 
+
 Page.create_content_type(
     ApplicationContent,
     APPLICATIONS=(
@@ -87,7 +88,8 @@ class Category(MPTTModel):
     name = models.CharField(max_length=20)
     slug = models.SlugField()
     parent = models.ForeignKey(
-        'self', blank=True, null=True, related_name='children')
+        'self', blank=True, null=True, related_name='children',
+        on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['tree_id', 'lft']
@@ -101,6 +103,7 @@ class Category(MPTTModel):
 class ExampleCMSBase(Base):
     pass
 
+
 ExampleCMSBase.register_regions(
     ('region', 'region title'),
     ('region2', 'region2 title'))
@@ -108,6 +111,7 @@ ExampleCMSBase.register_regions(
 
 class ExampleCMSBase2(Base):
         pass
+
 
 ExampleCMSBase2.register_regions(
     ('region', 'region title'),
