@@ -17,6 +17,7 @@ if (!Array.prototype.indexOf) {
         Downcoder.map["ü"] = Downcoder.map["Ü"] = "ue";
     }
 
+    // TODO: how can we make this asynchronous again?
     var copy_options = [];
     $.ajax({
       url: '/api/json/pages/',
