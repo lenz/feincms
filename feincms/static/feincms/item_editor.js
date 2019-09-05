@@ -18,10 +18,15 @@ if (!Array.prototype.indexOf) {
     }
 
     var copy_options = [];
-    $.getJSON("/api/json/pages/", function(data) {
+    $.ajax({
+      url: '/api/json/pages/',
+      dataType: 'json',
+      async: false,
+      success: function(data) {
         $.each(data, function(key, val) {
             copy_options.push('<option value="'+key+'">'+val+'</option>');
         });
+      }
     });
 
     function feincms_gettext(s) {
@@ -118,7 +123,7 @@ if (!Array.prototype.indexOf) {
             var in_database = item.find(".delete-field").length;
 
             if(in_database==0){ // remove on client-side only
-                alert("Nicht gespeicherter Content kann nicht verschoben werden?");
+                alert("Nicht gespeicherter Content kann nicht verschoben werden!");
             }
             else{
                 var page_id = $(this).val().split('_')[1];
